@@ -1,0 +1,15 @@
+# AlWird Solver — Python dependencies
+#
+# Install everything with:
+#     pip install -r requirements.txt
+#
+# ── Required ──────────────────────────────────────────────
+# Only needed for the WEB UI (app.py). The CLI (alwird_solver.py)
+# uses the Python standard library only and needs nothing here.
+flask>=3.0
+
+# ── Optional ──────────────────────────────────────────────
+# Only used by setup_alwird.py to rebuild the .pkl caches faster
+# (numpy-vectorized scoring, ~10x speedup). Not needed to RUN the
+# app — the shipped .pkl files already contain the caches.
+# numpy>=1.24
