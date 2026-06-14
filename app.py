@@ -578,21 +578,30 @@ def api_reset():
 
 def _app_startup() -> None:
     global ALL_WORDS, ALL_ANSWERS, CANDIDATE_POOL, OPENER, MP_POOL
+    
+    # Prevent double-execution if Gunicorn forks multiple workers
+    if ALL_WORDS:
+        return
+        
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     ALL_WORDS = solver.load_wordlist()
+    
     if not ALL_WORDS:
-        print("[!] Word list not found. Run the CLI and choose option 6 first.")
-        sys.exit(1)
+        print("[!] Word list not found. Ensure files are present.")
+        return
+
     ALL_ANSWERS = solver.load_answers()
     if ALL_ANSWERS:
         print(f"  [✓] Answers list available: {len(ALL_ANSWERS):,} words (toggle in the UI)")
+        
     # Start in Full mode by default (matches CLI startup)
     CANDIDATE_POOL = ALL_WORDS
     OPENER, _ = solver.get_best_opener(CANDIDATE_POOL)
     MP_POOL = multiprocessing.Pool(multiprocessing.cpu_count())
-    print(f"  [✓] Web UI ready — http://127.0.0.1:5050   (opener: {OPENER})")
+    print(f"  [✓] Web UI ready — (opener: {OPENER})")
 
+# Execute startup routine automatically when Gunicorn imports the app
+_app_startup()
 
 if __name__ == "__main__":
-    _app_startup()
     app.run(host="127.0.0.1", port=5050, debug=False, use_reloader=False)
