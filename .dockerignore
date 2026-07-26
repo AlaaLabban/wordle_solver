@@ -1,0 +1,14 @@
+# Keep the build context (and image) lean — none of this is needed at runtime.
+.git/
+.gitignore
+.dockerignore
+.DS_Store
+**/.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+
+# README visuals / docs — not used by the running app.
+docs/
+README.md
+*.png

@@ -5,8 +5,11 @@
 **An information-theoretic solver for [AlWird](https://arwordle.netlify.app/) — the Arabic Wordle.**
 Plays alongside you or by itself, ranks every guess by the *bits of information* it reveals, and visualises the whole thing with live, interactive charts.
 
+[![Live Demo](https://img.shields.io/badge/▶_Live_Demo-alwird.alabban.com-538d4e?style=for-the-badge)](https://alwird.alabban.com)
+
 ![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Web%20UI-Flask-000000?logo=flask&logoColor=white)
+![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker&logoColor=white)
 ![CLI](https://img.shields.io/badge/CLI-stdlib%20only-538d4e)
 ![Theme](https://img.shields.io/badge/UI-light%20%2F%20dark-b59f3b)
 
@@ -27,6 +30,7 @@ Plays alongside you or by itself, ranks every guess by the *bits of information*
 - [Project structure](#-project-structure)
 - [Rebuilding the caches](#-rebuilding-the-caches)
 - [Configuration](#-configuration)
+- [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
 - [FAQ](#-faq)
 - [Credits](#-credits)
@@ -276,6 +280,40 @@ Then on your phone browse to `http://<your-computer-ip>:5050`
 (find the IP with `ipconfig getifaddr en0` on macOS, or `hostname -I` on Linux).
 
 **See the mobile layout on desktop** — just narrow the browser window below ~1024px, or use the browser's device toolbar (`Ctrl/Cmd+Shift+M` in Chrome).
+
+---
+
+## 🐳 Deployment
+
+This isn't only a local script — it runs in **production**, containerised and served over HTTPS at **[alwird.alabban.com](https://alwird.alabban.com)**.
+
+### Run it yourself with Docker
+
+The repo ships a `Dockerfile` that builds a production image (Gunicorn WSGI server, layer-cached dependencies, non-root user, and a container `HEALTHCHECK`):
+
+```bash
+docker build -t alwird-solver .
+
+docker run -d \
+  --name alwird-app \
+  -p 5050:5050 \
+  --shm-size=1g \
+  --restart unless-stopped \
+  alwird-solver
+```
+
+Then open <http://localhost:5050>. Two run flags are worth calling out:
+
+- **`--shm-size=1g`** — the solver fans its heavy entropy computations out across every CPU core with a `multiprocessing` pool, and those workers communicate over `/dev/shm`. Docker's default 64 MB shared-memory segment is too small; 1 GB gives them room.
+- **`--restart unless-stopped`** — the container comes back on its own after a crash or a host reboot.
+
+### One worker, many threads — on purpose
+
+The image runs Gunicorn with a **single worker and multiple threads** (`-w 1 --threads 8`), not the usual multi-worker fan-out — and that's a deliberate design choice, not an oversight. `app.py` keeps live **session and job state in-process** (the `SESSIONS` and `JOBS` dicts) and streams progress to the browser by polling `/api/status/<job_id>`. Separate worker *processes* wouldn't share that state, so a poll could land on a worker that never ran the job. A single worker keeps all state coherent; the thread pool absorbs concurrent requests; and the CPU-heavy scoring still parallelises across every core inside the internal `multiprocessing` pool.
+
+### How the live instance is served
+
+The public instance is self-hosted on a Linux server behind a **Traefik** reverse proxy that terminates TLS with automatic, auto-renewing **Let's Encrypt** certificates. The container runs under a restart policy, sits behind an intrusion-prevention layer, and its uptime is tracked by an external monitor with alerting. Infrastructure-specific values — IP addresses, internal hostnames, API keys, and proxy config — are intentionally kept out of this public repo.
 
 ---
 
