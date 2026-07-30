@@ -13,9 +13,10 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Copy the dependency manifest first so Docker caches the pip layer and only
-# reinstalls when requirements.txt actually changes.
+# reinstalls when requirements.txt actually changes. Gunicorn is declared
+# there too, so requirements.txt stays the single source of truth.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application (scripts, word lists, .pkl caches, templates).
 COPY . .

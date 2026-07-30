@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Local environment
+.env
+
+# NOTE: the *.json word lists and *.pkl opener caches are intentionally
+# committed — the solver needs them for instant startup. Do not ignore them.

@@ -12,6 +12,7 @@ Plays alongside you or by itself, ranks every guess by the *bits of information*
 ![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker&logoColor=white)
 ![CLI](https://img.shields.io/badge/CLI-stdlib%20only-538d4e)
 ![Theme](https://img.shields.io/badge/UI-light%20%2F%20dark-b59f3b)
+![License](https://img.shields.io/badge/License-MIT-538d4e)
 
 </div>
 
@@ -33,6 +34,7 @@ Plays alongside you or by itself, ranks every guess by the *bits of information*
 - [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
 - [FAQ](#-faq)
+- [License](#-license)
 - [Credits](#-credits)
 
 ---
@@ -224,7 +226,7 @@ Every chart is an interactive bar chart — **hover any bar** to highlight it an
 ## 📁 Project structure
 
 ```
-v5/
+.
 ├── alwird_solver.py          # core solver + CLI menu  (stdlib only)
 ├── app.py                    # Flask web backend
 ├── templates/
@@ -236,8 +238,11 @@ v5/
 ├── alwird_cache_answers.pkl  # opener cache for the ANSWERS pool
 │
 ├── setup_alwird.py           # (optional) re-download words + rebuild caches
-├── requirements.txt          # pip dependencies (just Flask)
-├── docs/                     # README visuals
+├── requirements.txt          # pip dependencies (Flask + Gunicorn)
+├── Dockerfile                # production image — see Deployment
+├── .dockerignore
+├── docs/                     # README visuals + benchmark output
+├── LICENSE                   # MIT
 └── README.md                 # this file
 ```
 
@@ -264,11 +269,14 @@ python3 setup_alwird.py
 
 ## ⚙️ Configuration
 
-**Change the port** — edit the last line of `app.py`:
+**Change the port (local development)** — edit the `app.run(...)` call near the bottom of `app.py`:
 
 ```python
 app.run(host="127.0.0.1", port=5050, debug=False, use_reloader=False)
 ```
+
+> [!NOTE]
+> This only affects `python3 app.py`. Under Docker the app is served by Gunicorn, which never executes that line — it's guarded by `if __name__ == "__main__"`. Change the published port with Docker's `-p` flag instead, e.g. `-p 8080:5050`.
 
 **View it on your phone** (same Wi-Fi) — change the host to `0.0.0.0`:
 
@@ -382,6 +390,12 @@ It varies per run (the solver samples from a pool of near-optimal openers) and d
 
 **Can I use it for English Wordle?**
 The math is identical, but the word lists and Arabic normalisation are AlWird-specific. You'd need to swap the JSON word lists.
+
+---
+
+## 📄 License
+
+Released under the **MIT License** — see [LICENSE](LICENSE). You're free to use, modify, and redistribute it, including commercially, as long as the copyright notice is kept.
 
 ---
 

@@ -3,17 +3,20 @@
 # Install everything with:
 #     pip install -r requirements.txt
 #
-# ── Required ──────────────────────────────────────────────
+# ── Required (web UI only) ────────────────────────────────
 # Only needed for the WEB UI (app.py). The CLI (alwird_solver.py)
 # uses the Python standard library only and needs nothing here.
 flask>=3.0
 
+# ── Production server ─────────────────────────────────────
+# WSGI server used by the Docker image. Not needed for local
+# development — `python3 app.py` runs Flask's built-in server.
+# See the Dockerfile for why it must run with a SINGLE worker.
+gunicorn>=21.2
+
 # ── Optional ──────────────────────────────────────────────
 # Only used by setup_alwird.py to rebuild the .pkl caches faster
 # (numpy-vectorized scoring, ~10x speedup). Not needed to RUN the
-# app — the shipped .pkl files already contain the caches.
+# app — the shipped .pkl caches are already built, and
+# setup_alwird.py falls back to pure Python if numpy is absent.
 # numpy>=1.24
-
-# ignore this 
-gunicorn==21.2.0
-numpy
