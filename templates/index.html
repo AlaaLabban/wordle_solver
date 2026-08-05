@@ -93,7 +93,12 @@ header {
   flex-direction: column;
   align-items: center;
   border-bottom: 1px solid var(--tile-border);
-  padding: 14px 0 12px;
+  /* Match main's horizontal gutter. Without this the mode menu and word-pool
+     row ran flush to the screen edge on phones while everything in main sat
+     inset by 16px. The border-bottom still spans full width, which is what we
+     want from a divider. max() is a no-op today but keeps the gutter clear of
+     the notch if viewport-fit=cover is ever enabled. */
+  padding: 14px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
   margin-bottom: 18px;
 }
 header h1 {
@@ -104,7 +109,7 @@ header h1 {
 .sub { font-size: .72rem; color: var(--muted); letter-spacing: .06rem; margin-bottom: 12px; text-align: center; }
 
 /* ── Main ── */
-main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
+main { width: 100%; max-width: 560px; padding: 0 max(16px, env(safe-area-inset-right)) 60px max(16px, env(safe-area-inset-left)); }
 
 /* ── Tiles ── */
 [data-color="green"]  { background: var(--green)!important;     border-color: var(--green)!important;     color:#fff!important; }
@@ -286,6 +291,15 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 #toast.show { opacity: 1; }
 
 [hidden] { display: none !important; }
+
+/* On phones a 4-button group can't fit one row once the gutter is applied
+   (4 x 92px + gaps > the available width), so it wrapped 3 + 1 and left an
+   orphan. A 2-column grid wraps it evenly as 2 x 2 instead; 2-button groups
+   are unaffected. Above this width the flex row fits four across again. */
+@media (max-width: 430px) {
+  .mode-btns { display: grid; grid-template-columns: 1fr 1fr; }
+  .mode-btn { min-width: 0; }
+}
 
 /* ── Small screens: keep the title clear of the corner theme button ── */
 @media (max-width: 480px) {
