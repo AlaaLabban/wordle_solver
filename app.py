@@ -23,7 +23,7 @@ app.secret_key = "alwird-solver-web-ui-2024"
 ALL_WORDS: list = []      # full valid-guess vocabulary (~120k)
 ALL_ANSWERS: list = []    # answers-only candidate pool (~2,354)
 CANDIDATE_POOL: list = [] # active candidate source — ALL_WORDS or ALL_ANSWERS
-CACHE_MODE: str = "full"  # "full" or "answers"
+CACHE_MODE: str = "answers"  # "full" or "answers"
 OPENER: str = ""
 MP_POOL = None
 
@@ -577,7 +577,7 @@ def api_reset():
 # ── Startup ───────────────────────────────────────────────────────────────────
 
 def _app_startup() -> None:
-    global ALL_WORDS, ALL_ANSWERS, CANDIDATE_POOL, OPENER, MP_POOL
+    global ALL_WORDS, ALL_ANSWERS, CANDIDATE_POOL, OPENER, MP_POOL, CACHE_MODE
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     ALL_WORDS = solver.load_wordlist()
     if not ALL_WORDS:
@@ -586,8 +586,12 @@ def _app_startup() -> None:
     ALL_ANSWERS = solver.load_answers()
     if ALL_ANSWERS:
         print(f"  [✓] Answers list available: {len(ALL_ANSWERS):,} words (toggle in the UI)")
-    # Start in Full mode by default (matches CLI startup)
-    CANDIDATE_POOL = ALL_WORDS
+    # Default to the official answers list: it matches the real game, so the
+    # advice and the accuracy numbers are the realistic ones. Fall back to the
+    # full vocabulary only if the answers list is missing.
+    CANDIDATE_POOL = ALL_ANSWERS if ALL_ANSWERS else ALL_WORDS
+    if not ALL_ANSWERS:
+        CACHE_MODE = "full"
     OPENER, _ = solver.get_best_opener(CANDIDATE_POOL)
     MP_POOL = multiprocessing.Pool(multiprocessing.cpu_count())
     print(f"  [✓] Web UI ready — http://127.0.0.1:5050   (opener: {OPENER})")

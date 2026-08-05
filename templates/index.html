@@ -190,6 +190,77 @@ main { width: 100%; max-width: 560px; padding: 0 max(16px, env(safe-area-inset-r
 .cache-btn:hover { border-color: var(--yellow); }
 .cache-btn.selected { background: var(--yellow); border-color: var(--yellow); color: #fff; }
 
+/* ── Primary mode choice ──
+   One 3-way decision instead of twelve enumerated buttons. type, difficulty
+   and search depth are independent fields on currentMode, so they get
+   independent controls. */
+.type-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.type-card {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 9px 11px; background: var(--card);
+  border: 1px solid var(--tile-border); border-radius: 6px;
+  color: var(--text); cursor: pointer; transition: border-color .15s, background .15s;
+}
+.type-card:hover { border-color: var(--green); }
+.type-card.selected { background: var(--green); border-color: var(--green); }
+.type-card.selected .type-sub { color: rgba(255,255,255,.85); }
+.type-card.selected .type-name { color: #fff; }
+.type-name { font-size: .8rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.type-sub  { font-size: .68rem; color: var(--muted); line-height: 1.35; }
+
+.opt-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.opt-label { font-size: .76rem; font-weight: 700; color: var(--text); white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.opt-seg { display: flex; gap: 5px; flex: 1; min-width: 190px; }
+
+/* ── Advanced disclosure ── */
+.adv-toggle {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  background: none; border: none; cursor: pointer; padding: 4px 0;
+  color: var(--muted); font-size: .74rem; font-weight: 600; font-family: inherit;
+}
+.adv-toggle:hover { color: var(--text); }
+.adv-caret { display: inline-block; transition: transform .18s; font-size: .6rem; }
+.adv-toggle[aria-expanded="true"] .adv-caret { transform: rotate(90deg); }
+.adv-body { display: flex; flex-direction: column; gap: 9px; padding: 4px 0 2px; }
+.adv-body[hidden] { display: none; }
+
+/* ── Inline warning ── */
+.inline-warn {
+  font-size: .7rem; line-height: 1.45; color: var(--text);
+  background: var(--card-2); border-left: 3px solid var(--yellow); border-radius: 0;
+  padding: 7px 10px;
+}
+
+/* ── Info tooltips ──
+   Hover alone is invisible on touch devices, so these respond to hover,
+   keyboard focus AND tap. The bubble is a single shared element appended to
+   body so the header's overflow can never clip it. */
+.info-btn {
+  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  background: none; border: 1px solid var(--muted); color: var(--muted);
+  font-size: 9px; font-weight: 700; font-family: var(--font); line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: help; padding: 0; transition: color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn:focus-visible, .info-btn.open { color: var(--text); border-color: var(--text); }
+.type-card.selected .info-btn { border-color: rgba(255,255,255,.7); color: rgba(255,255,255,.9); }
+#info-tip {
+  position: fixed; z-index: 200; max-width: 290px; display: none;
+  background: var(--card-2); color: var(--text);
+  border: 1px solid var(--tile-border); border-radius: 6px;
+  padding: 9px 11px; font-size: .7rem; line-height: 1.5;
+  box-shadow: 0 4px 16px var(--shadow); pointer-events: none;
+}
+#info-tip b { color: var(--text); }
+
+/* ⓘ sits in the card corner as a sibling — a button cannot legally nest
+   inside another button, and both need to stay keyboard-reachable. */
+.type-wrap { position: relative; display: flex; }
+.type-wrap .type-card { flex: 1; padding-right: 26px; }
+.type-info { position: absolute; top: 8px; right: 8px; }
+.seg-item { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+.seg-item .mode-btn { flex: 1; min-width: 0; }
+
 /* ── Mode badge ── */
 .mode-badge { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .08rem; text-transform: uppercase; background: var(--card-2); color: var(--muted); border-radius: 3px; padding: 3px 9px; margin-bottom: 10px; border: 1px solid var(--tile-border); }
 .mode-badge.hard   { background: var(--yellow); color: #fff; border-color: var(--yellow); }
@@ -314,9 +385,11 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
   header { max-width: 1040px; }
   main { max-width: 1340px; }
 
-  /* menu: groups laid out in a 2-column grid */
-  .mode-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; align-items: start; }
-  .cache-row { grid-column: 1 / -1; }
+  /* The old 2-column grid existed to tame twelve buttons. The menu is now
+     seven controls, so a single column reads better and keeps the divider
+     and the Advanced disclosure full width. */
+  .mode-menu { max-width: 680px; margin-inline: auto; }
+  .opt-label { min-width: 92px; }
 
   /* pane = [ game controls | charts ] */
   /* game column grows with the window instead of sitting at a fixed 360px */
@@ -351,43 +424,93 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
   <h1>AlWird Solver</h1>
   <p class="sub" id="sub-info">Loading…</p>
   <div class="mode-menu">
-    <div class="mode-group">
-      <span class="mode-group-label">Interactive <span class="mode-group-note">— you play on the site, the solver guides you</span></span>
-      <div class="mode-btns">
-        <button class="mode-btn selected" data-type="interactive" data-legacy="false" data-hard="false" onclick="selectMode(this)">Standard</button>
-        <button class="mode-btn" data-type="interactive" data-legacy="false" data-hard="true" onclick="selectMode(this)">Hard mode</button>
+
+    <div class="type-row">
+      <div class="type-wrap">
+        <button class="type-card selected" id="type-interactive" onclick="setType('interactive')">
+          <span class="type-name">Play along</span>
+          <span class="type-sub">You play, it advises</span>
+        </button>
+        <button type="button" class="info-btn type-info" aria-label="About Play along"
+          data-tip="<b>Play along</b><br>You play the real game on the site. After each guess you enter the word and the colours you got back, and the solver ranks your best next guesses by how much information each one reveals.">i</button>
+      </div>
+      <div class="type-wrap">
+        <button class="type-card" id="type-auto" onclick="setType('auto')">
+          <span class="type-name">Watch it solve</span>
+          <span class="type-sub">It solves a word</span>
+        </button>
+        <button type="button" class="info-btn type-info" aria-label="About Watch it solve"
+          data-tip="<b>Watch it solve</b><br>The solver plays a complete game by itself against an answer you give it, showing every guess and how the field of candidates collapses turn by turn.">i</button>
+      </div>
+      <div class="type-wrap">
+        <button class="type-card" id="type-benchmark" onclick="setType('benchmark')">
+          <span class="type-name">Benchmark</span>
+          <span class="type-sub">Measure accuracy</span>
+        </button>
+        <button type="button" class="info-btn type-info" aria-label="About Benchmark"
+          data-tip="<b>Benchmark</b><br>Plays many random answers automatically and reports the average number of guesses, the solve rate, and the full distribution. Use it to compare settings against each other.">i</button>
       </div>
     </div>
-    <div class="mode-group">
-      <span class="mode-group-label">Automatic <span class="mode-group-note">— the solver plays itself against a word</span></span>
-      <div class="mode-btns">
-        <button class="mode-btn" data-type="auto" data-legacy="false" data-hard="false" onclick="selectMode(this)">Standard</button>
-        <button class="mode-btn" data-type="auto" data-legacy="false" data-hard="true" onclick="selectMode(this)">Hard mode</button>
+
+    <div class="opt-row">
+      <span class="opt-label">Difficulty</span>
+      <div class="opt-seg">
+        <span class="seg-item">
+          <button class="mode-btn selected" id="hard-off" onclick="setHard(false)">Normal</button>
+          <button type="button" class="info-btn" aria-label="About Normal difficulty"
+            data-tip="<b>Normal</b><br>No restrictions. Any valid five-letter word is a legal guess, including words already ruled out — which is exactly what makes pure probe words possible.">i</button>
+        </span>
+        <span class="seg-item">
+          <button class="mode-btn" id="hard-on" onclick="setHard(true)">Hard</button>
+          <button type="button" class="info-btn" aria-label="About Hard difficulty"
+            data-tip="<b>Hard</b><br>The real game's Hard Mode rule: every green and yellow letter you have revealed must be reused in your next guess. That leaves far fewer legal guesses, so the solver has less room to probe and usually needs an extra turn.">i</button>
+        </span>
       </div>
     </div>
-    <div class="mode-group">
-      <span class="mode-group-label">Legacy <span class="mode-group-note">— searches all 120k words each turn (slower, exhaustive)</span></span>
-      <div class="mode-btns">
-        <button class="mode-btn" data-type="interactive" data-legacy="true" data-hard="false" onclick="selectMode(this)">Interactive</button>
-        <button class="mode-btn" data-type="interactive" data-legacy="true" data-hard="true" onclick="selectMode(this)">Interactive · Hard</button>
-        <button class="mode-btn" data-type="auto" data-legacy="true" data-hard="false" onclick="selectMode(this)">Automatic</button>
-        <button class="mode-btn" data-type="auto" data-legacy="true" data-hard="true" onclick="selectMode(this)">Automatic · Hard</button>
+
+    <hr class="mode-divider">
+
+    <button type="button" class="adv-toggle" id="adv-toggle" aria-expanded="false" aria-controls="adv-body" onclick="toggleAdvanced()">
+      <span class="adv-caret">▶</span> Advanced
+    </button>
+    <div class="adv-body" id="adv-body" hidden>
+
+      <div class="opt-row">
+        <span class="opt-label">Search depth</span>
+        <div class="opt-seg">
+          <span class="seg-item">
+            <button class="mode-btn selected" id="depth-deep" onclick="setDepth(true)">Deep search</button>
+            <button type="button" class="info-btn" aria-label="About Deep search"
+              data-tip="<b>Deep search</b><br>Suggests from all 119,961 words, including ones that <i>cannot possibly be the answer</i>. These are pure probe words, chosen only to split the remaining candidates as evenly as possible. You give up winning this turn to buy more information.<br><br>Costs a few seconds on the second turn, then gets fast as candidates collapse.">i</button>
+          </span>
+          <span class="seg-item">
+            <button class="mode-btn" id="depth-quick" onclick="setDepth(false)">Quick search</button>
+            <button type="button" class="info-btn" aria-label="About Quick search"
+              data-tip="<b>Quick search</b><br>Only suggests words that could still be the answer, so every guess is also a chance to win outright. Instant to compute, but it can cost an extra turn while many candidates remain.">i</button>
+          </span>
+        </div>
       </div>
-    </div>
-    <div class="mode-group">
-      <span class="mode-group-label">Benchmark <span class="mode-group-note">— measure accuracy on random answers</span></span>
-      <div class="mode-btns">
-        <button class="mode-btn" data-type="benchmark" data-legacy="false" data-hard="false" onclick="selectMode(this)">Standard</button>
-        <button class="mode-btn" data-type="benchmark" data-legacy="false" data-hard="true" onclick="selectMode(this)">Hard mode</button>
-        <button class="mode-btn" data-type="benchmark" data-legacy="true" data-hard="false" onclick="selectMode(this)">Legacy</button>
-        <button class="mode-btn" data-type="benchmark" data-legacy="true" data-hard="true" onclick="selectMode(this)">Legacy · Hard</button>
+
+      <div class="opt-row">
+        <span class="opt-label">Word pool</span>
+        <div class="opt-seg">
+          <span class="seg-item">
+            <button class="cache-btn selected" id="cache-btn-answers" onclick="setCache('answers')">Official answers · 1,915</button>
+            <button type="button" class="info-btn" aria-label="About Official answers"
+              data-tip="<b>Official answers</b><br>The hidden word is drawn from the game's real 1,915-word solution list. This matches the actual game, so the advice and the accuracy figures are the most realistic.">i</button>
+          </span>
+          <span class="seg-item">
+            <button class="cache-btn" id="cache-btn-full" onclick="setCache('full')">Any 5-letter word · 120k</button>
+            <button type="button" class="info-btn" aria-label="About Any 5-letter word"
+              data-tip="<b>Any 5-letter word</b><br>Treats all 119,961 valid words as possible answers. Much harder and not true to the real game, but useful for stress-testing the solver.">i</button>
+          </span>
+        </div>
       </div>
-    </div>
-    <hr class="mode-divider" style="grid-column:1/-1">
-    <div class="cache-row">
-      <span class="cache-label">Word pool</span>
-      <button class="cache-btn selected" id="cache-btn-full"    onclick="setCache('full')">Full vocabulary · 120k</button>
-      <button class="cache-btn"          id="cache-btn-answers" onclick="setCache('answers')">Answers only · 1,915</button>
+
+      <div class="inline-warn" id="bench-deep-warn" hidden>
+        <b>Deep search on a benchmark is slow.</b> Every turn of every game searches all 119,961 words, so a large run can take many minutes. Switch to Quick search for fast benchmarks.
+      </div>
+
     </div>
   </div>
 </header>
@@ -593,7 +716,9 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 let gameActive  = false;
 let computing   = false;
 let maxAttempts = 8;
-let currentMode = { type: 'interactive', legacy: false, hard: false };
+// legacy defaults true — "Deep search" is the recommended default. The field
+// name stays `legacy` because the whole API surface already speaks it.
+let currentMode = { type: 'interactive', legacy: true, hard: false };
 
 let candHistory = [];      // [startN, afterG1, ...]
 let lastSuggestions = [];  // last top suggestions
@@ -619,14 +744,76 @@ function updateThemeBtn() {
 }
 function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
+/* ── Info tooltips ──
+   Hover-only tooltips are unreachable on a touch screen, so these open on
+   hover, on keyboard focus, and on tap. One shared bubble lives on <body> so
+   the header can never clip it, and it is clamped to the viewport. */
+const InfoTip = (() => {
+  let el = null, current = null;
+  function node() {
+    if (!el) { el = document.createElement('div'); el.id = 'info-tip'; document.body.appendChild(el); }
+    return el;
+  }
+  function show(btn) {
+    const t = node();
+    t.innerHTML = btn.dataset.tip || '';
+    // Park it at the origin before measuring. Measuring while it still sits at
+    // the previous position lets the viewport edge constrain its wrapping, so
+    // it reports a narrower width than it will actually occupy and the clamp
+    // below then lets it hang off the screen.
+    t.style.left = '0px'; t.style.top = '0px';
+    t.style.display = 'block';
+    const r = btn.getBoundingClientRect(), b = t.getBoundingClientRect();
+    let left = r.left + r.width / 2 - b.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - b.width - 8));
+    let top = r.bottom + 8;
+    if (top + b.height > window.innerHeight - 8) top = Math.max(8, r.top - b.height - 8);
+    t.style.left = left + 'px'; t.style.top = top + 'px';
+    if (current && current !== btn) current.classList.remove('open');
+    current = btn; btn.classList.add('open');
+  }
+  function hide() {
+    if (el) el.style.display = 'none';
+    if (current) { current.classList.remove('open'); current = null; }
+  }
+  document.addEventListener('click', ev => {
+    const btn = ev.target.closest('.info-btn');
+    if (!btn) { hide(); return; }
+    ev.preventDefault(); ev.stopPropagation();
+    btn === current ? hide() : show(btn);
+  });
+  document.addEventListener('mouseover', ev => {
+    const btn = ev.target.closest('.info-btn');
+    if (btn) show(btn);
+  });
+  document.addEventListener('mouseout', ev => {
+    const btn = ev.target.closest('.info-btn');
+    // keep it open if it was opened by tap/focus rather than hover
+    if (btn && btn === current && !btn.matches(':focus-visible')) hide();
+  });
+  document.addEventListener('focusin',  ev => { const b = ev.target.closest('.info-btn'); if (b) show(b); });
+  document.addEventListener('focusout', ev => { const b = ev.target.closest('.info-btn'); if (b && b === current) hide(); });
+  document.addEventListener('keydown',  ev => { if (ev.key === 'Escape') hide(); });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+  return { hide };
+})();
+
 // ── Init ───────────────────────────────────────────────────────────────────
 fetch('/api/info').then(r => r.json()).then(d => {
   document.getElementById('sub-info').textContent =
     `${(d.candidate_count || d.word_count).toLocaleString()} candidate words · opener: ${d.opener}`;
   maxAttempts = d.max_attempts || 8;
+  // Reflect the server's actual pool rather than a hardcoded selected class
+  if (d.cache_mode) {
+    document.getElementById('cache-btn-answers').classList.toggle('selected', d.cache_mode === 'answers');
+    document.getElementById('cache-btn-full').classList.toggle('selected',    d.cache_mode === 'full');
+  }
 }).catch(() => { document.getElementById('sub-info').textContent = 'AlWird Entropy Solver'; });
 updateThemeBtn();
 updateModeBadge();
+updateBenchWarning();
+try { if (localStorage.getItem('alwird-adv-open') === '1') toggleAdvanced(true); } catch (e) {}
 
 // ════════════════════════════════════════════════════════════════════════════
 //  CHART ENGINE
@@ -753,16 +940,55 @@ function setCache(mode) {
 // ════════════════════════════════════════════════════════════════════════════
 //  Mode selection
 // ════════════════════════════════════════════════════════════════════════════
-function selectMode(btn) {
+/* type, difficulty and search depth are independent fields, so each gets its
+   own setter. Changing any of them invalidates the current game, so they all
+   route through resetForModeChange(). Settings are never silently rewritten
+   by another setting — switching type keeps your difficulty and depth. */
+function setType(type) {
   if (computing) return;
-  currentMode = { type: btn.dataset.type, legacy: btn.dataset.legacy === 'true', hard: btn.dataset.hard === 'true' };
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
+  currentMode.type = type;
+  ['interactive', 'auto', 'benchmark'].forEach(t =>
+    document.getElementById('type-' + t).classList.toggle('selected', t === type));
+  document.getElementById('pane-interactive').hidden = type !== 'interactive';
+  document.getElementById('pane-auto').hidden        = type !== 'auto';
+  document.getElementById('pane-benchmark').hidden   = type !== 'benchmark';
+  resetForModeChange();
+}
 
-  document.getElementById('pane-interactive').hidden = currentMode.type !== 'interactive';
-  document.getElementById('pane-auto').hidden        = currentMode.type !== 'auto';
-  document.getElementById('pane-benchmark').hidden   = currentMode.type !== 'benchmark';
+function setHard(hard) {
+  if (computing) return;
+  currentMode.hard = hard;
+  document.getElementById('hard-off').classList.toggle('selected', !hard);
+  document.getElementById('hard-on').classList.toggle('selected', hard);
+  resetForModeChange();
+}
 
+function setDepth(deep) {
+  if (computing) return;
+  currentMode.legacy = deep;
+  document.getElementById('depth-deep').classList.toggle('selected', deep);
+  document.getElementById('depth-quick').classList.toggle('selected', !deep);
+  resetForModeChange();
+}
+
+/* Deep search runs a 119,961-word scan on every turn of every game, which is
+   fine for one game but turns a benchmark into a multi-minute job. Warn rather
+   than silently flipping the user's setting. */
+function updateBenchWarning() {
+  const w = document.getElementById('bench-deep-warn');
+  if (w) w.hidden = !(currentMode.type === 'benchmark' && currentMode.legacy);
+}
+
+function toggleAdvanced(force) {
+  const btn = document.getElementById('adv-toggle');
+  const body = document.getElementById('adv-body');
+  const open = force !== undefined ? force : body.hidden;
+  body.hidden = !open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  store('alwird-adv-open', open ? '1' : '0');
+}
+
+function resetForModeChange() {
   gameActive = false;
   document.getElementById('btn-submit').disabled = true;
   setStatus('Click "New Game" to start');
@@ -773,8 +999,8 @@ function selectMode(btn) {
   resetFbTiles();
   document.getElementById('guess-input').value = '';
   candHistory = []; lastSuggestions = []; lastScore = null;
-
   updateModeBadge();
+  updateBenchWarning();
 }
 
 function updateModeBadge() {
@@ -783,7 +1009,7 @@ function updateModeBadge() {
     const badge = document.getElementById(`mode-badge-${id}`); if (!badge) return;
     if (currentMode.type === type) {
       const parts = [];
-      if (currentMode.legacy) parts.push('Legacy');
+      if (currentMode.legacy) parts.push('Deep');
       if (currentMode.hard)   parts.push('Hard');
       if (!parts.length)      parts.push('Normal');
       badge.textContent = parts.join(' · ') + ' mode';
