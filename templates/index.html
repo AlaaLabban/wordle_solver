@@ -52,7 +52,15 @@
   --shadow:       rgba(0,0,0,.18);
 }
 
-html { background: var(--bg); }
+/* ── UI scale ──
+   Root font size drives every rem below, so the whole UI scales together.
+   The clamp floor keeps phones and tablets (<~800px) at exactly 16px — their
+   layout is unchanged — then grows smoothly to a 21px cap on wide desktops,
+   where the old fixed sizes left the page looking zoomed out. */
+html {
+  background: var(--bg);
+  font-size: clamp(16px, 0.6726vw + 10.61px, 22px);
+}
 body {
   background: var(--bg);
   color: var(--text);
@@ -67,7 +75,7 @@ body {
 /* ── Theme toggle ── */
 #theme-btn {
   position: fixed; top: 12px; left: 12px; z-index: 50;
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
   background: var(--card); color: var(--text);
   border: 1px solid var(--tile-border);
   font-size: 1.1rem; cursor: pointer; line-height: 1;
@@ -104,7 +112,7 @@ main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
 [data-color="gray"]   { background: var(--gray-tile)!important; border-color: var(--gray-tile)!important; color:#fff!important; }
 
 .tile {
-  width: 52px; height: 52px;
+  width: 3.25rem; height: 3.25rem;
   border: 2px solid var(--tile-border);
   border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
@@ -112,12 +120,12 @@ main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
   color: var(--text); user-select: none;
   transition: background .2s, border-color .2s;
 }
-.tile-row { display: flex; gap: 5px; justify-content: center; direction: rtl; }
+.tile-row { display: flex; gap: .3125rem; justify-content: center; direction: rtl; }
 .fb-tile { cursor: pointer; border-color: var(--tile-filled); }
 .fb-tile:hover { opacity: .82; }
-.h-tile { width: 42px; height: 42px; font-size: 1.15rem; }
+.h-tile { width: 2.625rem; height: 2.625rem; font-size: 1.15rem; }
 .t-tile {
-  width: 36px; height: 36px;
+  width: 2.25rem; height: 2.25rem;
   border: 2px solid var(--tile-border); border-radius: 3px;
   display: flex; align-items: center; justify-content: center;
   font-size: .95rem; font-weight: 700; font-family: var(--font-ar); color: var(--text);
@@ -132,7 +140,10 @@ main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
 .prog-fill { height: 100%; background: var(--green); border-radius: 3px; width: 0%; transition: width .35s ease; }
 
 /* ── Suggestions ── */
-.section-label { font-size: .66rem; letter-spacing: .1rem; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+/* Sentence case on purpose: uppercase is reserved for .charts-title section
+   dividers and buttons, so it still signals hierarchy instead of becoming
+   background texture. */
+.section-label { font-size: .78rem; letter-spacing: .01rem; color: var(--muted); margin: 14px 0 6px; }
 .sug-item {
   display: flex; align-items: center; gap: 10px; padding: 8px 12px;
   background: var(--card); border: 1px solid var(--tile-border); border-radius: 4px;
@@ -151,8 +162,8 @@ main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
 /* ── Mode menu ── */
 .mode-menu { display: flex; flex-direction: column; gap: 9px; width: 100%; margin-top: 4px; }
 .mode-group { display: flex; flex-direction: column; gap: 4px; }
-.mode-group-label { font-size: .58rem; letter-spacing: .1rem; text-transform: uppercase; color: var(--text); font-weight: 700; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-.mode-group-note { font-size: .56rem; letter-spacing: .02rem; text-transform: none; color: var(--muted); font-weight: 400; }
+.mode-group-label { font-size: .76rem; letter-spacing: .01rem; color: var(--text); font-weight: 700; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.mode-group-note { font-size: .72rem; letter-spacing: .01rem; text-transform: none; color: var(--muted); font-weight: 400; }
 .mode-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .mode-btn {
   flex: 1; min-width: 92px; padding: 8px 10px;
@@ -164,7 +175,7 @@ main { width: 100%; max-width: 560px; padding: 0 16px 60px; }
 .mode-btn.selected { background: var(--green); border-color: var(--green); color: #fff; }
 .mode-divider { border: none; border-top: 1px solid var(--tile-border); margin: 3px 0; }
 .cache-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cache-label { font-size: .58rem; letter-spacing: .08rem; text-transform: uppercase; color: var(--text); font-weight: 700; white-space: nowrap; }
+.cache-label { font-size: .76rem; letter-spacing: .01rem; color: var(--text); font-weight: 700; white-space: nowrap; }
 .cache-btn {
   flex: 1; min-width: 130px; padding: 7px 10px;
   background: var(--card); border: 1px solid var(--tile-border); border-radius: 5px;
@@ -189,7 +200,10 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 }
 .ar-input:focus { border-color: var(--green); }
 .ar-input::placeholder { color: var(--muted); font-size: .9rem; }
-.fb-label { font-size: .66rem; letter-spacing: .1rem; text-transform: uppercase; color: var(--muted); text-align: center; margin: 10px 0 5px; }
+/* The legend was wrapping mid-list and stranding "Green" on its own line.
+   Made it a deliberate second row instead of an accidental one. */
+.fb-label { font-size: .76rem; letter-spacing: .01rem; color: var(--muted); text-align: center; margin: 10px 0 5px; }
+.fb-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
 
 /* ── Buttons ── */
 .btn-row { display: flex; gap: 8px; margin-top: 12px; }
@@ -236,9 +250,13 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 .chart-note  { font-size: .62rem; color: var(--muted); text-align: right; white-space: nowrap; }
 .chart-body  { width: 100%; }
 .chart-empty { color: var(--muted); font-size: .72rem; text-align: center; padding: 24px 0; }
+/* Explanation panel beside each chart. A tinted panel rather than a dashed
+   rule — dashed borders read as "placeholder", which made finished cards
+   look like wireframes. */
 .chart-edu {
-  font-size: .68rem; line-height: 1.5; color: var(--muted);
-  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--tile-border);
+  font-size: .7rem; line-height: 1.6; color: var(--muted);
+  margin-top: 12px; padding: 11px 13px;
+  background: var(--card-2); border-radius: 6px;
 }
 .chart-edu b { color: var(--text); font-weight: 700; }
 .bar-svg { width: 100%; height: auto; display: block; overflow: visible; }
@@ -261,7 +279,7 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 .bench-stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .bench-stat { flex: 1; min-width: 90px; background: var(--card); border: 1px solid var(--tile-border); border-radius: 6px; padding: 10px; text-align: center; }
 .bench-stat .v { font-size: 1.3rem; font-weight: 700; color: var(--text); }
-.bench-stat .k { font-size: .58rem; letter-spacing: .1rem; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.bench-stat .k { font-size: .72rem; letter-spacing: .01rem; color: var(--muted); margin-top: 3px; }
 
 /* ── Toast ── */
 #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 22px; border-radius: 4px; font-weight: 700; font-size: .82rem; opacity: 0; transition: opacity .3s; z-index: 999; pointer-events: none; white-space: nowrap; }
@@ -279,23 +297,35 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
    DESKTOP LAYOUT  —  use the horizontal space
    ════════════════════════════════════════════════════════════ */
 @media (min-width: 1024px) {
-  header { max-width: 900px; }
-  main { max-width: 1180px; }
+  header { max-width: 1040px; }
+  main { max-width: 1340px; }
 
   /* menu: groups laid out in a 2-column grid */
   .mode-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; align-items: start; }
   .cache-row { grid-column: 1 / -1; }
 
   /* pane = [ game controls | charts ] */
-  .pane-grid { display: grid; grid-template-columns: 360px 1fr; gap: 28px; align-items: start; }
+  /* game column grows with the window instead of sitting at a fixed 360px */
+  .pane-grid { display: grid; grid-template-columns: clamp(380px, 32%, 460px) 1fr; gap: 28px; align-items: start; }
   .pane-main { position: sticky; top: 16px; }
 
   /* each chart card: graph beside its explanation */
   .chart-inner { display: grid; grid-template-columns: 1fr 230px; gap: 18px; align-items: center; }
-  .chart-edu { margin-top: 0; padding-top: 0; border-top: none; border-left: 1px dashed var(--tile-border); padding-left: 16px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
+  .chart-edu { margin-top: 0; padding: 14px 16px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
 
   /* benchmark: charts full width with side explanations */
   #pane-benchmark .bench-top { max-width: 520px; }
+}
+
+/* ── Large displays ──
+   The 1340px cap above is tuned for a laptop; on a 1920px monitor it left
+   ~290px of dead margin each side. Widen, but stay short of edge-to-edge so
+   the explanation text keeps a readable line length. */
+@media (min-width: 1600px) {
+  header { max-width: 1180px; }
+  main   { max-width: 1560px; }
+  .pane-grid { grid-template-columns: clamp(420px, 30%, 520px) 1fr; }
+  .chart-inner { grid-template-columns: 1fr 290px; }
 }
 </style>
 </head>
@@ -369,7 +399,7 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
         <hr>
         <input class="ar-input" id="guess-input" type="text" maxlength="10"
                placeholder="اكتب تخمينك هنا…" autocomplete="off" autocorrect="off" spellcheck="false">
-        <p class="fb-label">Click tiles to set feedback &nbsp;·&nbsp; ⬜ Gray &nbsp; 🟨 Yellow &nbsp; 🟩 Green</p>
+        <p class="fb-label">Click tiles to set feedback<span class="fb-legend"><span>⬜ Gray</span><span>🟨 Yellow</span><span>🟩 Green</span></span></p>
         <div class="tile-row" id="fb-row">
           <div class="tile fb-tile" data-state="0" onclick="cycleTile(this)"></div>
           <div class="tile fb-tile" data-state="0" onclick="cycleTile(this)"></div>
@@ -617,6 +647,18 @@ function drawBarChart(host, bars, opts = {}) {
   const H = 190, padTop = 24, padBot = 48;
   const plotH = H - padTop - padBot;
 
+  /* Labelling all ~20 partition bars turned the chart into a wall of digits.
+     Past 8 bars, print only the tallest few; every bar still shows its exact
+     value on hover via ChartTip. */
+  const labelCount = opts.labelTop != null ? opts.labelTop
+                   : (bars.length > 8 ? 3 : bars.length);
+  const labelled = new Set(
+    bars.map((b, i) => [b.value, i])
+        .sort((a, b) => b[0] - a[0])
+        .slice(0, labelCount)
+        .map(pair => pair[1])
+  );
+
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('class', 'bar-svg');
@@ -645,7 +687,7 @@ function drawBarChart(host, bars, opts = {}) {
     rect.addEventListener('mouseleave', () => { rect.classList.remove('hl'); ChartTip.hide(); });
     svg.appendChild(rect);
 
-    if (showValues) {
+    if (showValues && labelled.has(i)) {
       const val = document.createElementNS(NS, 'text');
       val.setAttribute('x', x + barW / 2); val.setAttribute('y', y - 5);
       val.setAttribute('text-anchor', 'middle'); val.setAttribute('class', 'bar-val');
