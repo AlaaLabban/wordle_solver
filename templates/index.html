@@ -388,8 +388,8 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
   /* The old 2-column grid existed to tame twelve buttons. The menu is now
      seven controls, so a single column reads better and keeps the divider
      and the Advanced disclosure full width. */
-  .mode-menu { max-width: 680px; margin-inline: auto; }
-  .opt-label { min-width: 92px; }
+  .mode-menu { max-width: 940px; margin-inline: auto; }
+  .opt-label { min-width: 104px; }
 
   /* pane = [ game controls | charts ] */
   /* game column grows with the window instead of sitting at a fixed 360px */
@@ -508,7 +508,7 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
       </div>
 
       <div class="inline-warn" id="bench-deep-warn" hidden>
-        <b>Deep search on a benchmark is slow.</b> Every turn of every game searches all 119,961 words, so a large run can take many minutes. Switch to Quick search for fast benchmarks.
+        <b>Deep search makes a benchmark slow.</b> Every turn of every game searches all 119,961 words, so a large run can take many minutes. Comparing the two search depths is exactly what a benchmark is for — just expect a longer wait on this one.
       </div>
 
     </div>
@@ -842,9 +842,23 @@ function drawBarChart(host, bars, opts = {}) {
   if (!bars || !bars.length) { host.innerHTML = '<div class="chart-empty">— no data yet —</div>'; return; }
 
   const maxVal = opts.maxValue != null ? opts.maxValue : Math.max(...bars.map(b => b.value), 1e-9);
-  const W = Math.max(host.clientWidth || 460, bars.length * 22);
-  const slot = W / bars.length;
-  const barW = Math.max(10, Math.min(slot - 12, 64));
+  /* The SVG is width:100% over a viewBox, so W is a coordinate space rather
+     than a pixel width. Letting it track the container meant a wide pane grew
+     W while H stayed at 190, stretching the chart into a long, short strip
+     with thin bars stranded in huge slots. Capping W makes a wide container
+     scale the whole chart up — bars, labels and all — instead. */
+  const W = Math.max(Math.min(host.clientWidth || 460, 720), bars.length * 22);
+  /* With only a few bars, spreading them over the full width leaves them
+     marooned in enormous slots. Lay them out in a centred band instead, so a
+     2-bar chart reads as a tidy pair rather than two sticks at opposite ends.
+     Widening the bars instead would not work: the bar cap has to stay modest,
+     and shrinking W to compensate would scale the label text up with it. */
+  const bandW  = Math.min(W, Math.max(bars.length * 110, 200));
+  const bandX  = (W - bandW) / 2;
+  const slot   = bandW / bars.length;
+  /* Proportional to the slot so a 4-bar chart fills its space as well as a
+     16-bar one does; the 110 cap stops a sparse chart growing fat bars. */
+  const barW = Math.max(10, Math.min(slot - 12, slot * 0.72, 110));
   const H = 190, padTop = 24, padBot = 48;
   const plotH = H - padTop - padBot;
 
@@ -873,7 +887,7 @@ function drawBarChart(host, bars, opts = {}) {
 
   bars.forEach((b, i) => {
     const h = Math.max(2, plotH * (b.value / maxVal));
-    const x = i * slot + (slot - barW) / 2;
+    const x = bandX + i * slot + (slot - barW) / 2;
     const y = padTop + plotH - h;
 
     const rect = document.createElementNS(NS, 'rect');
@@ -888,7 +902,9 @@ function drawBarChart(host, bars, opts = {}) {
     rect.addEventListener('mouseleave', () => { rect.classList.remove('hl'); ChartTip.hide(); });
     svg.appendChild(rect);
 
-    if (showValues && labelled.has(i)) {
+    // A row of "0" labels over flat bars is pure noise — the axis already
+    // says which bucket is empty.
+    if (showValues && labelled.has(i) && b.value > 0) {
       const val = document.createElementNS(NS, 'text');
       val.setAttribute('x', x + barW / 2); val.setAttribute('y', y - 5);
       val.setAttribute('text-anchor', 'middle'); val.setAttribute('class', 'bar-val');
