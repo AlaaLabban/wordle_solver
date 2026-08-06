@@ -11,10 +11,14 @@ HOW IT WORKS:
   Entropy H = -Σ p(pattern) * log2(p(pattern))
   where pattern is the green/yellow/gray feedback vector.
 
-MODES:
-  Normal  — solver searches all candidates for best guess each turn
-  Hard    — any revealed hint (green/yellow) must be used in the next guess
-  Legacy  — solver searches full 119k vocabulary every turn (slower, theoretically optimal)
+DIFFICULTY:
+  Normal        — solver picks the best guess freely
+  Hard          — any revealed hint (green/yellow) must be used in the next guess
+
+SEARCH DEPTH:
+  Quick search  — solver only considers words that could still be the answer (fast)
+  Deep search   — solver searches all 119k words every turn, including pure probe
+                  words that cannot win (slower, theoretically optimal)
 
 FEEDBACK ENCODING (per letter):
   2 = Green  (correct letter, correct position)
@@ -241,8 +245,8 @@ def best_guess(
     """
     Score every word in search_pool by the entropy it produces over candidates.
 
-    Normal mode  : search_pool = candidates          (fast)
-    Legacy mode  : search_pool = all_words           (slow, thorough)
+    Quick search : search_pool = candidates          (fast)
+    Deep search  : search_pool = all_words           (slow, thorough)
     Hard mode    : same as above but only words that reuse all revealed hints
     mp_pool      : live multiprocessing.Pool — uses parallel scoring when the
                    search pool exceeds MP_THRESHOLD words
@@ -497,18 +501,23 @@ def header(title: str) -> None:
 # Shared game engine
 # ─────────────────────────────────────────────────────────────────────────────
 
+def depth_label(legacy: bool) -> str:
+    """UI name for the search-depth flag (the `legacy` field name is kept internally)."""
+    return "Deep search" if legacy else "Quick search"
+
+
 def run_interactive_game(all_words: list[str], answers: list[str], legacy: bool, hard: bool) -> None:
     """
-    Core interactive loop shared by all three interactive modes.
+    Core "Play along" loop shared by every play-along variant.
 
-    all_words — full vocabulary, used as the legacy search pool
-    answers   — candidate pool (answers-only list, or full vocab in Full mode)
-    legacy=False  → search_pool = candidates  (fast, normal/hard)
-    legacy=True   → search_pool = all_words   (slow, legacy)
+    all_words — every 5-letter word, used as the Deep search pool
+    answers   — candidate pool (official answers, or every word in "any word" pool)
+    legacy=False  → Quick search: search_pool = candidates  (fast)
+    legacy=True   → Deep search:  search_pool = all_words   (slow, thorough)
     hard=True     → guesses must reuse revealed hints
     """
-    mode_label = ("Legacy · " if legacy else "") + ("Hard Mode" if hard else "Normal Mode")
-    header(f"Interactive  ·  {mode_label}")
+    mode_label = depth_label(legacy) + "  ·  " + ("Hard Mode" if hard else "Normal Mode")
+    header(f"Play along  ·  {mode_label}")
     print("  Play on the site and enter your guesses + feedback here.")
     print("  Feedback: 2 = 🟩 Green   1 = 🟨 Yellow   0 = ⬜ Gray")
     if hard:
@@ -581,13 +590,13 @@ def run_interactive_game(all_words: list[str], answers: list[str], legacy: bool,
 
 def run_auto_game(all_words: list[str], answers: list[str], legacy: bool, hard: bool) -> Optional[int]:
     """
-    Core automatic simulation loop shared by all three automatic modes.
+    Core "Watch it solve" simulation loop shared by every watch-it-solve variant.
 
-    all_words — full vocabulary, used as the legacy search pool
-    answers   — candidate pool (answers-only list, or full vocab in Full mode)
+    all_words — every 5-letter word, used as the Deep search pool
+    answers   — candidate pool (official answers, or every word in "any word" pool)
     """
-    mode_label = ("Legacy · " if legacy else "") + ("Hard Mode" if hard else "Normal Mode")
-    header(f"Automatic  ·  {mode_label}")
+    mode_label = depth_label(legacy) + "  ·  " + ("Hard Mode" if hard else "Normal Mode")
+    header(f"Watch it solve  ·  {mode_label}")
     word = input("  Enter the answer word to simulate against: ").strip()
     word = normalize(word)
 
@@ -648,7 +657,7 @@ def run_auto_game(all_words: list[str], answers: list[str], legacy: bool, hard: 
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_benchmark(all_words: list[str], answers: list[str], legacy: bool, hard: bool) -> None:
-    mode_label = ("Legacy · " if legacy else "") + ("Hard Mode" if hard else "Normal Mode")
+    mode_label = depth_label(legacy) + "  ·  " + ("Hard Mode" if hard else "Normal Mode")
     header(f"Benchmark  ·  {mode_label}")
 
     raw = input("  How many words to test? (default 100): ").strip()
@@ -786,28 +795,28 @@ _MENU_TEMPLATE = """
   ║        AlWird Entropy Solver  🟩🟨⬜          ║
   ╠══════════════════════════════════════════════╣
   ║                                              ║
-  ║  1 · Interactive mode                        ║
+  ║  1 · Play along                              ║
   ║      Play on site, solver guides you         ║
   ║       ├ 1a · Normal                          ║
   ║       └ 1b · Hard                            ║
   ║                                              ║
-  ║  2 · Automatic mode                          ║
+  ║  2 · Watch it solve                          ║
   ║      Solver plays itself against a word      ║
   ║       ├ 2a · Normal                          ║
   ║       └ 2b · Hard                            ║
   ║                                              ║
-  ║  3 · Legacy mode  (slower, more thorough)    ║
-  ║      Searches full vocabulary every turn     ║
-  ║       ├ 3a · Interactive Normal              ║
-  ║       ├ 3b · Interactive Hard                ║
-  ║       ├ 3c · Automatic Normal                ║
-  ║       └ 3d · Automatic Hard                  ║
+  ║  3 · Deep search  (slower, more thorough)    ║
+  ║      Scores every 5-letter word each turn    ║
+  ║       ├ 3a · Play along Normal               ║
+  ║       ├ 3b · Play along Hard                 ║
+  ║       ├ 3c · Watch it solve Normal           ║
+  ║       └ 3d · Watch it solve Hard             ║
   ║                                              ║
   ║  4 · Benchmark                               ║
   ║      Test accuracy on a random sample        ║
   ║       ├ 4a · Normal  ├ 4b · Hard             ║
-  ║       └ 4c · Legacy Normal                   ║
-  ║         4d · Legacy Hard                     ║
+  ║       └ 4c · Deep search Normal              ║
+  ║         4d · Deep search Hard                ║
   ║                                              ║
   ║  5 · Warm up cache                           ║
   ║      Pre-compute best opening guess pool     ║
@@ -815,8 +824,8 @@ _MENU_TEMPLATE = """
   ║  6 · Download word list                      ║
   ║      Fetch words from the live site          ║
   ║                                              ║
-  ║  7 · Switch opener cache            {tag}  ║
-  ║      {desc}  ║
+  ║  7 · Switch word pool          {tag}  ║
+  ║      {desc}║
   ║                                              ║
   ║  0 · Exit                                    ║
   ╚══════════════════════════════════════════════╝
@@ -824,14 +833,15 @@ _MENU_TEMPLATE = """
 
 def _menu(cache_file: str) -> str:
     if cache_file == CACHE_FILE_ANSWERS:
-        tag  = "[ ANSWERS ]"
-        desc = "Now: answers cache  (2,354 words)  "
+        tag  = "[ OFFICIAL ]"
+        desc = "Now: official answers  (1,915 words)"
     else:
-        tag  = "[  FULL   ]"
-        desc = "Now: full vocab cache (120k words)  "
-    return _MENU_TEMPLATE.format(tag=tag, desc=desc)
+        tag  = "[   ANY    ]"
+        desc = "Now: any 5-letter word  (120k words)"
+    return _MENU_TEMPLATE.format(tag=tag, desc=desc.ljust(40))
 
 # Map of shortcut inputs → (interactive, legacy, hard)
+# (field names kept as-is; `interactive` = "Play along", `legacy` = "Deep search")
 SHORTCUTS = {
     "1a": (True,  False, False),
     "1b": (True,  False, True),
@@ -850,18 +860,18 @@ SHORTCUTS = {
 
 def main() -> None:
     global CACHE_FILE
-    answers_mode = False        # False = full 120k vocab, True = answers-only (2,354)
+    answers_mode = False        # False = any 5-letter word (120k), True = official answers (1,915)
 
     def load_pools():
-        """Return (full_vocab, candidate_pool) for the active mode, or (None, None)."""
+        """Return (all_words, candidate_pool) for the active word pool, or (None, None)."""
         words = load_wordlist()
         if not words:
             return None, None
         if answers_mode:
             ans = load_answers()
             if not ans:
-                print(f"\n  [!] Answers list not found: {ANSWERS_FILE}")
-                print("      Falling back to full vocabulary for this run.")
+                print(f"\n  [!] Official answers list not found: {ANSWERS_FILE}")
+                print("      Falling back to any 5-letter word for this run.")
                 return words, words
             return words, ans
         return words, words
@@ -879,20 +889,20 @@ def main() -> None:
         if choice == "7":
             if not answers_mode:
                 if not os.path.exists(CACHE_FILE_ANSWERS):
-                    print(f"\n  [!] Answers cache not found: {CACHE_FILE_ANSWERS}")
+                    print(f"\n  [!] Official answers cache not found: {CACHE_FILE_ANSWERS}")
                     input("\n  Press Enter to return to menu …")
                     continue
                 if not os.path.exists(ANSWERS_FILE):
-                    print(f"\n  [!] Answers word list not found: {ANSWERS_FILE}")
+                    print(f"\n  [!] Official answers word list not found: {ANSWERS_FILE}")
                     input("\n  Press Enter to return to menu …")
                     continue
                 answers_mode = True
                 CACHE_FILE = CACHE_FILE_ANSWERS
-                print(f"\n  [✓] Switched to ANSWERS mode  (2,354-word candidates — faster & more accurate)")
+                print(f"\n  [✓] Word pool: OFFICIAL ANSWERS  (1,915 candidates — faster & more accurate)")
             else:
                 answers_mode = False
                 CACHE_FILE = CACHE_FILE_FULL
-                print(f"\n  [✓] Switched to FULL mode  (120k-word candidates — exhaustive)")
+                print(f"\n  [✓] Word pool: ANY 5-LETTER WORD  (120k candidates — exhaustive)")
             input("\n  Press Enter to continue …")
             continue
 
@@ -936,7 +946,8 @@ def main() -> None:
                 continue
 
             if choice in ("1", "2"):
-                label = {"1": "Interactive mode", "2": "Automatic mode"}[choice]
+                label = {"1": "Play along  ·  Quick search",
+                         "2": "Watch it solve  ·  Quick search"}[choice]
                 hard = submenu(label)
                 if hard is None:
                     continue
@@ -948,12 +959,12 @@ def main() -> None:
             elif choice == "3":
                 print(f"""
   ┌─────────────────────────────────────────┐
-  │  Legacy mode                            │
+  │  Deep search                            │
   ├─────────────────────────────────────────┤
-  │  a · Interactive Normal                 │
-  │  b · Interactive Hard                   │
-  │  c · Automatic Normal                   │
-  │  d · Automatic Hard                     │
+  │  a · Play along Normal                  │
+  │  b · Play along Hard                    │
+  │  c · Watch it solve Normal              │
+  │  d · Watch it solve Hard                │
   │  0 · Back                               │
   └─────────────────────────────────────────┘""")
                 sub = input("  Choose: ").strip().lower()
@@ -979,8 +990,8 @@ def main() -> None:
   ├─────────────────────────────────────────┤
   │  a · Normal                             │
   │  b · Hard                               │
-  │  c · Legacy Normal                      │
-  │  d · Legacy Hard                        │
+  │  c · Deep search Normal                 │
+  │  d · Deep search Hard                   │
   │  0 · Back                               │
   └─────────────────────────────────────────┘""")
                 sub = input("  Choose: ").strip().lower()
