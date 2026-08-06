@@ -357,6 +357,148 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 .bench-stat .v { font-size: 1.3rem; font-weight: 700; color: var(--text); }
 .bench-stat .k { font-size: .72rem; letter-spacing: .01rem; color: var(--muted); margin-top: 3px; }
 
+/* ── Help / onboarding modal ── */
+#help-btn {
+  /* Sits beside #theme-btn (left:12px, width:2.5rem). Derived from the same
+     rem so it cannot overlap as the root font size scales with the viewport. */
+  position: fixed; top: 12px; left: calc(12px + 2.5rem + 8px); z-index: 50;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--tile-border);
+  font-size: 1rem; font-weight: 700; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .15s, border-color .15s;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+#help-btn:hover { transform: scale(1.08); border-color: var(--green); }
+
+#help-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.66);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px; overflow-y: auto;
+}
+#help-overlay[hidden] { display: none; }
+.help-card {
+  background: var(--card); border: 1px solid var(--tile-border);
+  border-radius: 12px; width: 100%; max-width: 580px;
+  margin: auto; box-shadow: 0 18px 50px var(--shadow);
+  animation: helpIn .18s ease-out;
+}
+@keyframes helpIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .help-card { animation: none; } }
+
+.help-head {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 20px 22px 14px; border-bottom: 1px solid var(--tile-border);
+}
+.help-head h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: .06rem; text-transform: uppercase; }
+.help-head p  { font-size: .76rem; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.help-x {
+  margin-inline-start: auto; flex: none;
+  width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  background: var(--card-2); color: var(--muted);
+  border: 1px solid var(--tile-border); cursor: pointer;
+  font-size: .9rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.help-x:hover { color: var(--text); border-color: var(--text); }
+
+.help-body { padding: 6px 22px 4px; }
+.help-sec { padding: 14px 0; border-bottom: 1px solid var(--tile-border); }
+.help-sec:last-child { border-bottom: none; }
+.help-sec h3 {
+  font-size: .62rem; letter-spacing: .12rem; text-transform: uppercase;
+  color: var(--muted); font-weight: 700; margin-bottom: 7px;
+}
+.help-sec p { font-size: .8rem; line-height: 1.6; color: var(--text); }
+.help-sec p + p { margin-top: 8px; }
+.help-sec b { font-weight: 700; }
+.help-muted { color: var(--muted) !important; }
+
+.help-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--green); color: #fff; text-decoration: none;
+  border-radius: 5px; padding: 9px 15px; font-size: .78rem; font-weight: 700;
+  transition: background .15s;
+}
+.help-link:hover { background: var(--green-hover); }
+
+.help-steps { list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 9px; }
+.help-steps li { counter-increment: s; display: flex; gap: 10px; font-size: .8rem; line-height: 1.55; }
+.help-steps li::before {
+  content: counter(s); flex: none;
+  width: 1.35rem; height: 1.35rem; border-radius: 50%;
+  background: var(--card-2); border: 1px solid var(--tile-border);
+  color: var(--text); font-size: .68rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.help-tiles { display: flex; gap: 4px; direction: rtl; margin: 10px 0 4px; justify-content: center; }
+.help-tile {
+  width: 2.1rem; height: 2.1rem; border: 2px solid var(--tile-border); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ar); font-size: 1rem; font-weight: 700; color: var(--text);
+}
+.help-key { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.help-key div { display: flex; align-items: center; gap: 9px; font-size: .76rem; line-height: 1.45; }
+.help-swatch { flex: none; width: 1rem; height: 1rem; border-radius: 3px; border: 1px solid var(--tile-border); }
+
+.help-foot {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 15px 22px 18px; border-top: 1px solid var(--tile-border);
+}
+.help-foot-left { flex: 1; min-width: 170px; display: flex; flex-direction: column; gap: 5px; }
+.help-foot .note { font-size: .7rem; color: var(--muted); line-height: 1.45; }
+.help-link2 {
+  font-size: .74rem; font-weight: 700; color: var(--green);
+  text-decoration: none; align-self: flex-start;
+}
+.help-link2:hover { text-decoration: underline; }
+[data-theme="light"] .help-link2 { color: var(--green-hover); }
+.help-got {
+  background: var(--green); color: #fff; border: none; border-radius: 5px;
+  padding: 10px 22px; font-size: .8rem; font-weight: 700; letter-spacing: .06rem;
+  text-transform: uppercase; cursor: pointer; transition: background .15s;
+}
+.help-got:hover { background: var(--green-hover); }
+
+@media (max-width: 480px) {
+  /* the small-screen rule below shrinks #theme-btn to 36px, so track that */
+  #help-btn { left: calc(12px + 36px + 8px); width: 36px; height: 36px; font-size: .9rem; }
+  .help-head, .help-body, .help-foot { padding-left: 16px; padding-right: 16px; }
+}
+
+/* Desktop: a single 580px column left the dialog narrow and the scroll long on
+   a wide screen. Widen the card, raise the type, and flow the sections into two
+   balanced columns — CSS columns rather than a grid, because the sections have
+   very different heights and columns pack them instead of aligning rows. */
+@media (min-width: 900px) {
+  #help-overlay { padding: 12px 24px; }
+  .help-card { max-width: 920px; }
+  /* one row instead of stacked — the dialog is height-constrained on a laptop */
+  .help-foot-left { flex-direction: row; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .help-head { padding: 15px 26px 11px; }
+  .help-head h2 { font-size: 1.35rem; }
+  .help-head p  { font-size: .82rem; }
+  .help-body { padding: 4px 26px 2px; column-count: 2; column-gap: 34px; }
+  .help-sec {
+    -webkit-column-break-inside: avoid; break-inside: avoid;
+    border-bottom: none; padding: 8px 0 9px;
+  }
+  .help-sec h3 { font-size: .64rem; margin-bottom: 6px; }
+  .help-sec p  { font-size: .84rem; line-height: 1.55; }
+  .help-sec p + p { margin-top: 6px; }
+  .help-steps { gap: 7px; }
+  .help-steps li { font-size: .84rem; line-height: 1.45; }
+  .help-key { gap: 4px; margin-top: 8px; }
+  .help-key div  { font-size: .78rem; }
+  .help-tiles { margin: 8px 0 2px; }
+  .help-tile { width: 2.2rem; height: 2.2rem; font-size: 1.05rem; }
+  .help-foot { padding: 10px 26px 12px; }
+  .help-foot .note { font-size: .74rem; }
+  .help-link2 { font-size: .78rem; }
+}
+
 /* ── Toast ── */
 #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 22px; border-radius: 4px; font-weight: 700; font-size: .82rem; opacity: 0; transition: opacity .3s; z-index: 999; pointer-events: none; white-space: nowrap; }
 #toast.show { opacity: 1; }
@@ -419,6 +561,86 @@ hr { border: none; border-top: 1px solid var(--tile-border); margin: 14px 0; }
 <body>
 
 <button id="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+<button id="help-btn" onclick="openHelp()" title="How this works" aria-label="How this works">?</button>
+
+<div id="help-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="help-card" role="document">
+
+    <div class="help-head">
+      <div>
+        <h2 id="help-title">AlWird Solver</h2>
+        <p>A guessing assistant for the Arabic Wordle game <b>AlWird</b>, built on information theory.</p>
+      </div>
+      <button type="button" class="help-x" onclick="closeHelp()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="help-body">
+
+      <div class="help-sec">
+        <h3>How it works</h3>
+        <p>Every guess splits the remaining candidates into groups, one per colour pattern it could come back with. This tool measures that split in <b>bits of information</b> and ranks the guesses that shrink the field fastest.</p>
+        <p class="help-muted">It only advises — it never connects to the game and cannot see the answer.</p>
+      </div>
+
+      <div class="help-sec">
+        <h3>The game itself</h3>
+        <p>Guess a hidden <b>5-letter</b> Arabic word in <b>8</b> tries. This solver is not the game; you play that here:</p>
+        <p style="margin-top:10px">
+          <a class="help-link" href="https://arwordle.netlify.app/" target="_blank" rel="noopener noreferrer">Open AlWird ↗</a>
+        </p>
+      </div>
+
+      <div class="help-sec">
+        <h3>Playing along</h3>
+        <ol class="help-steps">
+          <li><span>Guess on the real site — start with the opener shown at the top of this page.</span></li>
+          <li><span>Type that word into the input box here.</span></li>
+          <li><span>Click the tiles to match the colours you got, then press <b>Submit</b>.</span></li>
+          <li><span>The solver narrows the field and ranks your next guesses. Repeat until you win.</span></li>
+        </ol>
+      </div>
+
+      <div class="help-sec">
+        <h3>Setting the colours</h3>
+        <div class="help-tiles">
+          <span class="help-tile" data-color="green">أ</span>
+          <span class="help-tile" data-color="gray">ب</span>
+          <span class="help-tile" data-color="yellow">ط</span>
+          <span class="help-tile" data-color="gray">ا</span>
+          <span class="help-tile" data-color="gray">ل</span>
+        </div>
+        <div class="help-key">
+          <div><span class="help-swatch" style="background:var(--green)"></span> Right letter, right place</div>
+          <div><span class="help-swatch" style="background:var(--yellow)"></span> Right letter, wrong place</div>
+          <div><span class="help-swatch" style="background:var(--gray-tile)"></span> Letter is not in the word</div>
+        </div>
+        <p class="help-muted" style="margin-top:10px">Click a tile repeatedly to cycle through the three colours.</p>
+      </div>
+
+      <div class="help-sec">
+        <h3>Reading the suggestions</h3>
+        <p><b>H</b> is the expected information gain in bits — higher is better. <b>One bit halves the remaining candidates</b>, so 5 bits cuts the field by about 32×.</p>
+        <p><span style="color:var(--green);font-weight:700">★</span> marks a word that could still be the answer, so it might win outright. <b>◇</b> marks a probe: a word that cannot win, offered because it separates the candidates better.</p>
+      </div>
+
+      <div class="help-sec">
+        <h3>The settings</h3>
+        <p>Choose <b>Play along</b>, <b>Watch it solve</b>, or <b>Benchmark</b> at the top. <b>Difficulty</b> mirrors the game's hard mode; <b>Advanced</b> holds search depth and the word pool.</p>
+        <p class="help-muted">Every option has an <b>ⓘ</b> explaining what it changes — hover, tap or focus it.</p>
+      </div>
+
+    </div>
+
+    <div class="help-foot">
+      <div class="help-foot-left">
+        <a class="help-link2" href="https://github.com/AlaaLabban/wordle_solver" target="_blank" rel="noopener noreferrer">Source code and full write-up on GitHub ↗</a>
+        <span class="note">Reopen this any time with the <b>?</b> button, top left.</span>
+      </div>
+      <button type="button" class="help-got" onclick="closeHelp()">Got it</button>
+    </div>
+
+  </div>
+</div>
 
 <header>
   <h1>AlWird Solver</h1>
@@ -743,6 +965,55 @@ function updateThemeBtn() {
   btn.title = light ? 'Switch to dark mode' : 'Switch to light mode';
 }
 function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+/* ── Help / onboarding modal ──
+   Opens itself once on a first visit, then only via the ? button. The "seen"
+   flag is written on close rather than on open, so someone who shuts the tab
+   mid-read still gets it next time. */
+let helpLastFocus = null;
+
+function openHelp() {
+  const ov = document.getElementById('help-overlay');
+  if (!ov.hidden) return;
+  helpLastFocus = document.activeElement;
+  ov.hidden = false;
+  document.body.style.overflow = 'hidden';
+  ov.scrollTop = 0;
+  // preventScroll matters: focusing the footer button would otherwise scroll
+  // the dialog to the bottom, landing a first-time reader on the last section.
+  const x = ov.querySelector('.help-x');
+  if (x) x.focus({ preventScroll: true });
+}
+
+function closeHelp() {
+  const ov = document.getElementById('help-overlay');
+  if (ov.hidden) return;
+  ov.hidden = true;
+  document.body.style.overflow = '';
+  store('alwird-seen-intro', '1');
+  if (helpLastFocus && helpLastFocus.focus) helpLastFocus.focus();
+  helpLastFocus = null;
+}
+
+(function wireHelp() {
+  const ov = document.getElementById('help-overlay');
+  // backdrop only — a click inside the card must not dismiss it
+  ov.addEventListener('click', ev => { if (ev.target === ov) closeHelp(); });
+  document.addEventListener('keydown', ev => {
+    if (ov.hidden) return;
+    if (ev.key === 'Escape') { closeHelp(); return; }
+    if (ev.key !== 'Tab') return;
+    // keep focus inside the dialog while it is open
+    const f = [...ov.querySelectorAll('button, [href]')].filter(e => e.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  });
+  let seen = null;
+  try { seen = localStorage.getItem('alwird-seen-intro'); } catch (e) { seen = '1'; }
+  if (seen !== '1') openHelp();
+})();
 
 /* ── Info tooltips ──
    Hover-only tooltips are unreachable on a touch screen, so these open on
