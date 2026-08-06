@@ -597,6 +597,12 @@ def _app_startup() -> None:
     print(f"  [✓] Web UI ready — http://127.0.0.1:5050   (opener: {OPENER})")
 
 
+# Initialise at import time. Gunicorn imports this module as `app:app` and
+# never executes the __main__ block below, so startup must not live there —
+# with it there the container starts, passes its health check and serves
+# HTTP 200 while every word list is still empty.
+_app_startup()
+
+
 if __name__ == "__main__":
-    _app_startup()
     app.run(host="127.0.0.1", port=5050, debug=False, use_reloader=False)

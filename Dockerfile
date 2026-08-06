@@ -29,8 +29,11 @@ USER appuser
 EXPOSE 5050
 
 # Liveness probe: the container is healthy only once the app answers on /.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5050/', timeout=4).status == 200 else 1)"
+# Check /api/info rather than /, and assert the word lists actually loaded.
+# "/" only renders a static template, so it returned 200 from a container whose
+# solver had never initialised — a broken image reported itself healthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request,json,sys; d=json.load(urllib.request.urlopen('http://127.0.0.1:5050/api/info', timeout=4)); sys.exit(0 if d.get('candidate_count',0) > 0 and d.get('opener') else 1)"
 
 # IMPORTANT — a SINGLE worker (with threads), not multiple workers.
 # app.py keeps session/job state in-process (the SESSIONS/JOBS dicts) and
