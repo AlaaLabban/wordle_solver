@@ -26,6 +26,7 @@ Plays alongside you or by itself, ranks every guess by the *bits of information*
 - [The two interfaces](#-the-two-interfaces)
 - [Modes explained](#-modes-explained)
 - [The word pools & the two `.pkl` caches](#-the-word-pools--the-two-pkl-caches)
+- [Performance](#-performance)
 - [The information theory behind it](#-the-information-theory-behind-it)
 - [The charts (web UI)](#-the-charts-web-ui)
 - [Project structure](#-project-structure)
@@ -53,7 +54,7 @@ It ships in two forms:
 | 🌐 **Web UI** | A Wordle-faithful browser app with live entropy charts, light/dark mode, and a responsive desktop/mobile layout. |
 
 > [!NOTE]
-> The solver never connects to the game or automates it. You play on the real site; the solver just advises you (interactive mode) or simulates games offline (automatic / benchmark modes).
+> The solver never connects to the game or automates it. You play on the real site; the solver just advises you (**Play along**) or simulates games offline (**Watch it solve** / **Benchmark**).
 
 ---
 
@@ -93,7 +94,48 @@ That's it — the word lists and both opener caches are already included, so sta
 python3 alwird_solver.py
 ```
 
-A numbered menu. Type a top-level number (`1`–`6`) to open a submenu, or a shortcut like `1a`, `2b`, `3c` to jump straight in. Option **7** toggles the word pool (see [below](#-the-word-pools--the-two-pkl-caches)).
+A numbered menu. Type a top-level number (`1`–`4`) to open a submenu, or a shortcut like `1a`, `2b`, `3c` to jump straight in. Options **5** and **6** warm up the cache and re-download the word list; option **7** toggles the word pool (see [below](#-the-word-pools--the-two-pkl-caches)).
+
+```
+  ╔══════════════════════════════════════════════╗
+  ║        AlWird Entropy Solver  🟩🟨⬜          ║
+  ╠══════════════════════════════════════════════╣
+  ║                                              ║
+  ║  1 · Play along                              ║
+  ║      Play on site, solver guides you         ║
+  ║       ├ 1a · Normal                          ║
+  ║       └ 1b · Hard                            ║
+  ║                                              ║
+  ║  2 · Watch it solve                          ║
+  ║      Solver plays itself against a word      ║
+  ║       ├ 2a · Normal                          ║
+  ║       └ 2b · Hard                            ║
+  ║                                              ║
+  ║  3 · Deep search  (slower, more thorough)    ║
+  ║      Scores every 5-letter word each turn    ║
+  ║       ├ 3a · Play along Normal               ║
+  ║       ├ 3b · Play along Hard                 ║
+  ║       ├ 3c · Watch it solve Normal           ║
+  ║       └ 3d · Watch it solve Hard             ║
+  ║                                              ║
+  ║  4 · Benchmark                               ║
+  ║      Test accuracy on a random sample        ║
+  ║       ├ 4a · Normal  ├ 4b · Hard             ║
+  ║       └ 4c · Deep search Normal              ║
+  ║         4d · Deep search Hard                ║
+  ║                                              ║
+  ║  5 · Warm up cache                           ║
+  ║      Pre-compute best opening guess pool     ║
+  ║                                              ║
+  ║  6 · Download word list                      ║
+  ║      Fetch words from the live site          ║
+  ║                                              ║
+  ║  7 · Switch word pool          [ OFFICIAL ]  ║
+  ║      Now: official answers  (1,915 words)    ║
+  ║                                              ║
+  ║  0 · Exit                                    ║
+  ╚══════════════════════════════════════════════╝
+```
 
 ### Web UI
 
@@ -103,7 +145,7 @@ python3 app.py        # then open http://127.0.0.1:5050
 
 A single-page app styled after Wordle's dark theme (with a light mode). Features:
 
-- **Interactive play** with a clickable feedback grid and ranked suggestions.
+- **Play-along mode** with a clickable feedback grid and ranked suggestions.
 - **Live charts** that update as you type a guess — before you even submit it.
 - A **☀️/🌙 theme toggle** (top-left) that remembers your choice.
 - A **responsive layout**: a single column on phones/tablets, and a wide two-pane layout on desktop that puts the charts (with explanations beside them) next to the game.
@@ -114,10 +156,10 @@ A single-page app styled after Wordle's dark theme (with a light mode). Features
 
 Every mode combines three independent choices: **what the solver does**, **how strict the guesses are**, and **how wide it searches**.
 
-### 1. Interactive — *you play, the solver guides*
+### 1. Play along — *you play, the solver guides*
 You play on the real site. After each turn you type your guess and click the tiles to match the colors you got. The solver filters the remaining candidates and shows you the top 5 guesses ranked by entropy.
 
-### 2. Automatic — *the solver plays itself*
+### 2. Watch it solve — *the solver plays itself*
 You give it the hidden answer; it simulates a full game against that word and shows the trace (every guess, its entropy, and how the candidate pool collapsed).
 
 ### 3. Benchmark — *measure the strategy*
@@ -129,11 +171,16 @@ It runs the solver against many random answers and reports the **average guesses
 | **Normal** | Any valid word may be guessed. |
 | **Hard mode** | Every revealed hint must be reused — greens stay in place, yellows must reappear. Mirrors Wordle's "Hard Mode" rule. |
 
-### Legacy
-By default the solver only *searches* the current candidate set for its next guess (fast). **Legacy** mode instead scores **all ~120,000 valid words** every turn — slower, but it can occasionally find a sharper "probe" word that isn't itself a candidate.
+### Quick search vs. Deep search
+This is the **search depth** — how wide a net the solver casts when choosing its next guess.
+
+| | |
+|---|---|
+| **Quick search** | Only considers words that could *still be the answer*. Fast, and every guess can also win outright. The everyday choice. |
+| **Deep search** | Scores **all ~120,000 valid words** every turn, including pure **probe** words that cannot possibly be the answer. You give up winning that turn to buy more information — and it measurably pays off (see [Performance](#-performance)). |
 
 > [!IMPORTANT]
-> **Legacy is slow by design.** A benchmark in Legacy mode scores 120k words per turn, so keep the test count small. Normal mode is the everyday choice.
+> **Deep search is slow by design** — it scores 120k words on *every turn of every game*. In Benchmark mode that cost multiplies by the number of games, so start with a small test count.
 
 ---
 
@@ -143,23 +190,62 @@ Not every valid word can actually be the answer. The real game bundles **two** s
 
 | Pool | File | Size | Role |
 |---|---|---|---|
-| **Answers only** | `alwird_answers.json` | **1,915** | The words the game can actually pick as a solution. |
-| **Full vocabulary** | `alwird_words.json` | **119,961** | Every word you're *allowed to type* (valid guesses). |
+| **Official answers** | `alwird_answers.json` | **1,915** | The words the game can actually pick as a solution. |
+| **Any 5-letter word** | `alwird_words.json` | **119,961** | Every word you're *allowed to type* (valid guesses). |
 
 You switch between them with the **Word pool** toggle (web) or **menu option 7** (CLI):
 
-- **Answers only** — the solver treats the hidden word as one of the 1,915 real answers. **Much faster and more accurate** (~3.85 average guesses).
-- **Full vocabulary** — the solver assumes the answer could be any of the 120k words. Exhaustive, slower, and needs more guesses on average.
+- **Official answers** — the solver treats the hidden word as one of the 1,915 real answers. **Much faster and more accurate** (~3.85 average guesses on Quick search, **3.60** on Deep search).
+- **Any 5-letter word** — the solver assumes the answer could be any of the 120k words. Exhaustive, slower, and needs more guesses on average.
 
 Each pool has its **own pre-computed opening-guess cache**, because the best first guess depends on which pool you're solving over:
 
 | Cache file | Pairs with | Contents |
 |---|---|---|
-| `alwird_cache.pkl` | Full vocabulary | best openers scored over 119,961 words |
-| `alwird_cache_answers.pkl` | Answers only | best openers scored over 1,915 words |
+| `alwird_cache.pkl` | Any 5-letter word | best openers scored over 119,961 words |
+| `alwird_cache_answers.pkl` | Official answers | best openers scored over 1,915 words |
 
 > [!WARNING]
 > Don't rename or delete the `.pkl` files. They make startup instant — without them the solver would re-score every word at launch, which takes minutes. The toggle swaps **both** the candidate pool *and* the matching cache together.
+
+---
+
+## 📈 Performance
+
+Everything below is the solver's own **Benchmark** mode marking its own homework — running the strongest configuration it offers, **Deep search over the official-answers pool**, against **1,000 randomly sampled answers**:
+
+<div align="center">
+
+![Benchmark output — 1,000 answers solved with Deep search over the official-answers pool](docs/deep_search_run_1000_samples.png)
+
+</div>
+
+| Metric | Result |
+|---|---|
+| **Average guesses** | **3.60** |
+| **Solve rate** | **100%** — 0 failures in 1,000 games |
+| **Worst case** | **6** guesses, with 8 allowed |
+
+### Guesses-to-solve distribution
+
+| Guesses | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8+ |
+|---|---|---|---|---|---|---|---|---|
+| **Games** | 0 | 23 | 418 | 492 | 66 | 1 | 0 | 0 |
+
+**91% of games end in 3 or 4 guesses**, exactly one game ever needed 6, and none needed 7 or more. The tail is what matters here: a strategy that averages well but occasionally fails is worse than one that never does.
+
+### How fast the field collapses
+
+Average number of candidates still standing at each attempt:
+
+| Attempt | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| **Candidates left** | 1,915 | 84.9 | 5.9 | 1.4 | 1 | 1 |
+
+The opening guess alone takes **1,915 candidates down to ~85** — a **95.6% cut before any real deduction happens** — and by the third guess fewer than six words are left. That curve *is* the entropy strategy made visible: each guess is picked precisely because it splits the remaining field as evenly as possible.
+
+> [!NOTE]
+> **Deep search is what buys the last fraction of a guess.** The everyday **Quick search** over the same pool averages ~3.85; widening the pool to *any 5-letter word* costs far more (~5.5). The trade is compute time — see [Quick search vs. Deep search](#quick-search-vs-deep-search).
 
 ---
 
@@ -197,9 +283,9 @@ If a guess split 1,915 candidates into groups of sizes `{53, 20, 14, 12, …}`, 
 - **Expected remaining** = `Σ nᵢ² / N` — the average number of candidates you'll have left after this guess.
 - **Words eliminated** = `N − expected_remaining` — the flip side: how many you expect to rule out.
 
-### Why "answers only" wins
+### Why "official answers" wins
 
-Entropy is computed *over the candidate set*. If that set is the 120k full vocabulary, the guess has to distinguish between tens of thousands of words that can never be the answer — wasted effort that inflates the guess count. Restricting candidates to the 1,915 real answers makes every bit count, which is why answers-mode averages **~3.85 guesses** versus the full pool's **~5.5**.
+Entropy is computed *over the candidate set*. If that set is all 120k valid words, the guess has to distinguish between tens of thousands of words that can never be the answer — wasted effort that inflates the guess count. Restricting candidates to the 1,915 real answers makes every bit count, which is why the official-answers pool averages **~3.85 guesses** versus the wide pool's **~5.5**.
 
 ### The opening guess
 
@@ -232,10 +318,10 @@ Every chart is an interactive bar chart — **hover any bar** to highlight it an
 ├── templates/
 │   └── index.html            # the entire web UI (HTML + CSS + JS, inlined)
 │
-├── alwird_words.json         # full vocabulary — 119,961 valid guesses
-├── alwird_answers.json       # answer words   — 1,915 real solutions
-├── alwird_cache.pkl          # opener cache for the FULL pool
-├── alwird_cache_answers.pkl  # opener cache for the ANSWERS pool
+├── alwird_words.json         # any 5-letter word  — 119,961 valid guesses
+├── alwird_answers.json       # official answers   — 1,915 real solutions
+├── alwird_cache.pkl          # opener cache for the ANY-WORD pool
+├── alwird_cache_answers.pkl  # opener cache for the OFFICIAL-ANSWERS pool
 │
 ├── setup_alwird.py           # (optional) re-download words + rebuild caches
 ├── requirements.txt          # pip dependencies (Flask + Gunicorn)
@@ -358,15 +444,15 @@ Then start again. Or change the port in `app.py`.
 </details>
 
 <details>
-<summary><b>The Answers toggle says the cache or list is missing</b></summary>
+<summary><b>The word-pool toggle says the cache or list is missing</b></summary>
 
-Answers mode needs both `alwird_answers.json` and `alwird_cache_answers.pkl` in the folder. They ship with the project; don't move or rename them.
+The **Official answers** pool needs both `alwird_answers.json` and `alwird_cache_answers.pkl` in the folder. They ship with the project; don't move or rename them.
 </details>
 
 <details>
-<summary><b>Legacy mode / a big benchmark is extremely slow</b></summary>
+<summary><b>Deep search / a big benchmark is extremely slow</b></summary>
 
-That's expected — Legacy scores all ~120,000 words every turn. Use a small test count, or switch to Normal mode and the Answers pool for fast, accurate results.
+That's expected — Deep search scores all ~120,000 words on every turn, and a benchmark repeats that for every game in the sample. It isn't a setting to avoid (it's the most accurate one the solver has); just start with a small test count, or use **Quick search** when you want an answer in milliseconds.
 </details>
 
 <details>
